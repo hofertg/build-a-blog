@@ -15,4 +15,15 @@
         </div>
     {% endfor %}
 
+    <br>
+    <hr>
+
+    {% if prev %}
+        <a href="/?page={{ prev }}">back to the future</a>
+    {% endif %}
+    {% if next %}
+        | <a href="/?page={{ next }}">out of the past</a>
+    {% endif %}
+
+
 {% endblock %}

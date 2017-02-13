@@ -25,6 +25,10 @@ jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), a
 
 blogname = "Da blog"
 
+def get_posts(limit, offset):
+    return db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT " + str(limit) + " OFFSET " + str(offset))
+
+
 class BlogPost(db.Model):
     title = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
@@ -46,9 +50,24 @@ class Handler(webapp2.RequestHandler):
 class MainHandler(Handler):
     def get(self):
 
-        posts = db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT 5")
+        page = self.request.get("page")
+        prev = None
+        next = None
 
-        self.render('blogfront.html', maintitle=blogname, blogname=blogname, posts = posts)
+        if not page.isdigit() or int(page) < 2:
+            posts = get_posts(5, 0)
+            page = 1
+        else:
+            page = int(page)
+            posts = get_posts(5, (page-1)*5)
+            prev = page-1
+
+        if posts.count(offset=page*5, limit=5) > 0:
+            next = page + 1
+
+
+        self.render('blogfront.html', maintitle=blogname, blogname=blogname, posts = posts, prev=prev, next=next)
+
 
 
 class NewPostHandler(Handler):
