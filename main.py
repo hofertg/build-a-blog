@@ -44,13 +44,16 @@ class Handler(webapp2.RequestHandler):
 
 
 class MainHandler(Handler):
-    def render_front(self, title="", blogcontent="", error=""):
+    def get(self):
+
         posts = db.GqlQuery("SELECT * FROM BlogPost ORDER BY created DESC LIMIT 5")
 
-        self.render('blogfront.html', blogname=blogname, title=title, blogcontent=blogcontent, error=error, posts = posts)
+        self.render('blogfront.html', maintitle=blogname, blogname=blogname, posts = posts)
 
+
+class NewPostHandler(Handler):
     def get(self):
-        self.render_front()
+        self.render('newpost.html', maintitle="New Post", blogname=blogname, title="", blogcontent="", error="")
 
     def post(self):
         title = self.request.get("title")
@@ -60,13 +63,30 @@ class MainHandler(Handler):
             post = BlogPost(title = title, content = blogcontent)
             post.put()
 
-            self.redirect("/")
+            self.redirect("/blog/" + str(post.key().id()))
         else:
             error = "We need both title and content!"
-            self.render_front(title, blogcontent, error)
+            self.render('newpost.html', blogname=blogname, title=title, blogcontent=blogcontent, error=error)
+
+
+class ViewPostHandler(Handler):
+    def get(self, id):
+        post = BlogPost.get_by_id( int(id) )
+
+        if not post:
+            self.error(400)
+            self.response.write("Oops! Something went wrong.")
+            return
+
+        self.render('blogfront.html', maintitle=post.title, blogname=blogname, posts = [post])
+
+
 
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', MainHandler),
+    ('/blog', MainHandler),
+    ('/newpost', NewPostHandler),
+    webapp2.Route('/blog/<id:\d+>', ViewPostHandler)
 ], debug=True)
